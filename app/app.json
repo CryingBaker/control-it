@@ -35,8 +35,8 @@
       [
         "expo-build-properties",
         {
-          "ios":{
-            "useFrameworks":"static"
+          "ios": {
+            "useFrameworks": "static"
           }
         }
       ],
@@ -45,6 +45,14 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "ea0d817e-fd0f-47ce-9b39-ce3bf77332d5"
+      }
     }
   }
 }
