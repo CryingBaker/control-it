@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { View, TextInput, Text, TouchableOpacity, KeyboardAvoidingView, ActivityIndicator } from 'react-native';
 import tw from 'twrnc';
 import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
 
 function App() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+
   const signIn = async () => {
     setLoading(true);
     try {
@@ -16,20 +18,27 @@ function App() {
       alert(e.message);
     } finally {
       setLoading(false);
-    };
+    }
   };
 
   const signUp = async () => {
     setLoading(true);
     try {
-      await auth().createUserWithEmailAndPassword(email, password);
+      const userCredential = await auth().createUserWithEmailAndPassword(email, password);
+      const userId = userCredential.user.uid;
+
+      // Set initial temperature and powerConsumption in Firestore
+      await firestore().collection('users').doc(userId).set({
+        temperature: "0",
+        powerConsumption: "0",
+      });
+
       alert("Check your email!");
     } catch (e: any) {
       alert(e.message);
     } finally {
       setLoading(false);
     }
-
   };
 
   return (
@@ -44,7 +53,8 @@ function App() {
           value={email}
           onChangeText={setEmail}
           keyboardType="email-address"
-          autoCapitalize="none" />
+          autoCapitalize="none"
+        />
 
         <Text style={tw`text-sm font-semibold mb-2`}>Password</Text>
         <TextInput
@@ -52,9 +62,10 @@ function App() {
           placeholder="Password"
           value={password}
           onChangeText={setPassword}
-          secureTextEntry />
+          secureTextEntry
+        />
         {loading ? (
-          <ActivityIndicator size={"small"} />
+          <ActivityIndicator size="small" />
         ) : (
           <>
             <TouchableOpacity
@@ -72,7 +83,6 @@ function App() {
             </TouchableOpacity>
           </>
         )}
-
       </KeyboardAvoidingView>
     </View>
   );

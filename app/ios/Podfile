@@ -36,6 +36,8 @@ install! 'cocoapods',
 prepare_react_native_project!
 
 target 'ControlIt' do
+  pod 'Firebase/Core'
+  pod 'Firebase/Database'
   use_expo_modules!
   config = use_native_modules!
 
