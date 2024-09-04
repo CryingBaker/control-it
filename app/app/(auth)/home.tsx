@@ -13,7 +13,7 @@ const signOut = async () => {
 }
 
 const Home = () => {
-  const [appliances, setAppliances] = useState([]);
+  const [appliances, setAppliances] = useState<{ id: string; name: string; status: boolean; reg_status: boolean; }[]>([]);
   const [temperature, setTemperature] = useState<number | null>(null);
   const [powerConsumption, setPowerConsumption] = useState<number | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
@@ -22,6 +22,7 @@ const Home = () => {
   const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null);
   const [timeSinceLastRefresh, setTimeSinceLastRefresh] = useState<string>('Never');
   const [isToggling, setIsToggling] = useState<string | null>(null);
+  const [isAutomatic, setIsAutomatic] = useState(false);
 
   useEffect(() => {
     const fetchUserAttributes = async () => {
@@ -34,6 +35,7 @@ const Home = () => {
             const userData = userDoc.data();
             setTemperature(userData?.temperature || null);
             setPowerConsumption(userData?.powerConsumption || null);
+            setIsAutomatic(userData?.automatic || false);
           }
         }
       } catch (error) {
@@ -47,7 +49,7 @@ const Home = () => {
         if (user) {
           const userId = user.uid;
           const appliancesSnapshot = await firestore().collection('users').doc(userId).collection('appliances').get();
-          const appliancesList = appliancesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          const appliancesList: { id: string; name: string; status: boolean; reg_status: boolean; }[] = appliancesSnapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name, status: doc.data().status, reg_status: doc.data().reg_status }));
           setAppliances(appliancesList);
         }
       } catch (error) {
@@ -138,12 +140,26 @@ const Home = () => {
       }
     } catch (error) {
       console.error("Error adding appliance to Firestore:", error);
-      alert(`Error adding appliance to Firestore: ${error.message}`);
+      alert(`Error adding appliance to Firestore: ${(error as Error).message}`);
     }
 
     setNewApplianceName('');
     setNewApplianceLocation('');
     setModalVisible(false);
+  };
+
+  const toggleAutomation = async () => {
+    const newValue = !isAutomatic;
+    setIsAutomatic(newValue);
+    try {
+      const user = auth().currentUser;
+      if (user) {
+        const userId = user.uid;
+        await firestore().collection('users').doc(userId).update({ automatic: newValue });
+      }
+    } catch (error) {
+      console.error("Error updating automation status in Firestore:", error);
+    }
   };
 
   const renderItem = ({ item }: { item: { id: string, name: string, status: boolean, reg_status: boolean } }) => (
@@ -155,7 +171,7 @@ const Home = () => {
       <Switch
         value={item.status}
         onValueChange={() => toggleAppliance(item.id)}
-        disabled={!item.reg_status || isToggling === item.id}
+        disabled={!item.reg_status || isToggling === item.id || isAutomatic}
       />
     </View>
   );
@@ -176,9 +192,14 @@ const Home = () => {
       <Text style={tw`text-sm mb-5`}>Last Refresh: {timeSinceLastRefresh}</Text>
       <View style={tw`flex-row justify-between items-center mb-5`}>
         <Text style={tw`text-xl font-bold`}>Your Appliances</Text>
-        <TouchableOpacity onPress={() => setModalVisible(true)} style={tw`bg-blue-500 rounded-full p-1.5`}>
-          <Ionicons name="add" size={20} color="white" />
-        </TouchableOpacity>
+        <View style={tw`flex-row`}>
+          <TouchableOpacity onPress={toggleAutomation} style={tw`mr-2 p-2 rounded-full ${isAutomatic ? 'bg-green-500' : 'bg-red-500'}`}>
+            <Ionicons name="settings" size={24} color="white" />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => setModalVisible(true)} style={tw`bg-blue-500 rounded-full p-2`}>
+            <Ionicons name="add" size={24} color="white" />
+          </TouchableOpacity>
+        </View>
       </View>
       {appliances.length > 0 ? (
         <FlatList

@@ -1,8 +1,18 @@
 import React, { useState } from 'react';
-import { View, TextInput, Text, TouchableOpacity, KeyboardAvoidingView, ActivityIndicator } from 'react-native';
+import { View, TextInput, Text, TouchableOpacity, KeyboardAvoidingView, ActivityIndicator, Platform } from 'react-native';
 import tw from 'twrnc';
-import auth from '@react-native-firebase/auth';
+import auth, { firebase } from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
+
+
+// if (Platform.OS === 'web') {
+//   const firebaseConfig = require('./firebaseConfig'); // Replace './firebaseConfig' with the path to your actual firebase config file
+//   if (!firebase.apps.length) {
+//     firebase.initializeApp(firebaseConfig);
+//   } else {
+//     firebase.app(); // if already initialized, use that one
+//   }
+// }
 
 function App() {
   const [email, setEmail] = useState('');

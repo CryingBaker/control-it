@@ -6,7 +6,7 @@ export * from 'expo-router';
 declare module 'expo-router' {
   export namespace ExpoRouter {
     export interface __routes<T extends string = string> extends Record<string, unknown> {
-      StaticRoutes: `/` | `/(auth)` | `/(auth)/home` | `/_sitemap` | `/home`;
+      StaticRoutes: `/` | `/(auth)` | `/(auth)/home` | `/_sitemap` | `/firebaseConfig` | `/home`;
       DynamicRoutes: never;
       DynamicRouteTemplate: never;
     }
