@@ -2,12 +2,8 @@
 #include <WiFiClient.h>
 
 // Replace with your network credentials
-const char* ssid = "realme";
-const char* password = "suyash613";
-
-// Server details
-const char* host = "www.google.com";
-const int httpPort = 80; // HTTP port
+const char* ssid = "WIFI_NAME";
+const char* password = "WIFI_PASSWORD";
 
 void setup() {
   Serial.begin(115200);
