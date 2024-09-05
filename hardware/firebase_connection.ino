@@ -1,3 +1,6 @@
+//install firebase client from https://github.com/mobizt/FirebaseClient?tab=readme-ov-file#usages
+//install arduinoJson version 5.13.1
+
 #include< Arduino.h>
 #if defined(ESP32) || defined(ARDUINO_RASPBERRY_PI_PICO_W)
 #include <WiFi.h>
