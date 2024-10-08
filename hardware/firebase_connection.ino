@@ -11,7 +11,7 @@
 #define WIFI_SSID "ssid"
 #define WIFI_PASSWORD "password"
 
-#define DATABASE_SECRET "you_api_key"
+#define DATABASE_SECRET "your_api_key"
 #define DATABASE_URL "firebase_url"
 
 WiFiClientSecure ssl;
@@ -76,8 +76,6 @@ void loop() {
 
         // Convert received data to float
         float temperature = receivedData.toFloat(); // Convert string to float
-
-        // Update temperature data in Firebase
         String path = "/temperature"; // Path where the temperature will be stored
         if (Database.set<float>(client, path, temperature)) {
             Serial.printf("Temperature updated successfully: %.2f\n", temperature);
@@ -87,6 +85,13 @@ void loop() {
         }
     } else {
         Serial.print("..."); // Optional: print dots to indicate waiting for data
+    }
+    bool v2 = Database.get<int>(client, "/status");
+    if (client.lastError().code() == 0){
+        Serial.println(v2);
+    }
+    else{
+        printError(client.lastError().code(), client.lastError().message());
     }
 
     delay(1000); // Delay for a second before checking again
