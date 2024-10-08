@@ -10,7 +10,6 @@
 
 #define WIFI_SSID "ssid"
 #define WIFI_PASSWORD "password"
-
 #define DATABASE_SECRET "your_api_key"
 #define DATABASE_URL "firebase_url"
 
@@ -62,7 +61,6 @@ void setup() {
     }
 
     Serial.println("Firebase Initialized Successfully");
-
     app.getApp<RealtimeDatabase>(Database);
     Database.url(DATABASE_URL);
     client.setAsyncResult(result);
@@ -72,25 +70,24 @@ void loop() {
     // Check for incoming serial data from Arduino
     if (Serial.available()) {
         String receivedData = Serial.readStringUntil('\n');
-        Serial.println("Received: " + receivedData);
-
-        // Convert received data to float
         float temperature = receivedData.toFloat(); // Convert string to float
         String path = "/temperature"; // Path where the temperature will be stored
+
+        // Send temperature to Firebase
         if (Database.set<float>(client, path, temperature)) {
-            Serial.printf("Temperature updated successfully: %.2f\n", temperature);
+            Serial.printf("Temperature sent: %f\n", temperature);
         } else {
-            Serial.print("Update Error: ");
             printError(client.lastError().code(), client.lastError().message());
         }
     } else {
         Serial.print("..."); // Optional: print dots to indicate waiting for data
     }
-    bool v2 = Database.get<int>(client, "/status");
-    if (client.lastError().code() == 0){
-        Serial.println(v2);
-    }
-    else{
+
+    // Retrieve the status from Firebase
+    if (Database.get<int>(client, "/status")) {
+        int status = result.value<int>();
+        Serial.printf("Status: %d\n", status);
+    } else {
         printError(client.lastError().code(), client.lastError().message());
     }
 
