@@ -1,7 +1,4 @@
-//install firebase client from https://github.com/mobizt/FirebaseClient?tab=readme-ov-file#usages
-//install arduinoJson version 5.13.1
-
-#include< Arduino.h>
+#include <Arduino.h>
 #if defined(ESP32) || defined(ARDUINO_RASPBERRY_PI_PICO_W)
 #include <WiFi.h>
 #elif defined(ESP8266)
@@ -11,11 +8,11 @@
 #include <FirebaseClient.h>
 #include <WiFiClientSecure.h>
 
-#define WIFI_SSID "WIFI_AP"
-#define WIFI_PASSWORD "WIFI_PASSWORD"
+#define WIFI_SSID "realme"
+#define WIFI_PASSWORD "suyash613"
 
-#define DATABASE_SECRET "DATABASE_SECRET"
-#define DATABASE_URL "URL"
+#define DATABASE_SECRET "hx4iVAqmEQ3dLL5soVYqCNOOSk7shVaxkfo2MFHz"
+#define DATABASE_URL "https://control-it-38c7d-default-rtdb.asia-southeast1.firebasedatabase.app/"
 
 WiFiClientSecure ssl;
 DefaultNetwork network;
@@ -26,79 +23,71 @@ RealtimeDatabase Database;
 AsyncResult result;
 LegacyToken dbSecret(DATABASE_SECRET);
 
-void printError(int code, const String &msg)
-{
-    Firebase.printf("Error, msg: %s, code: %d\n", msg.c_str(), code);
+void printError(int code, const String &msg) {
+    Serial.printf("Error, msg: %s, code: %d\n", msg.c_str(), code);
 }
 
-void setup()
-{
-
-    Serial.begin(115200);
+void connectToWiFi() {
+    Serial.println("Connecting to Wi-Fi...");
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
-    Serial.print("Connecting to Wi-Fi");
-    while (WiFi.status() != WL_CONNECTED)
-    {
+    unsigned long startAttemptTime = millis();
+    while (WiFi.status() != WL_CONNECTED && millis() - startAttemptTime < 15000) {
         Serial.print(".");
-        delay(300);
+        yield(); // Allow watchdog timer to reset
     }
+    
+    if (WiFi.status() != WL_CONNECTED) {
+        Serial.println("Failed to connect to Wi-Fi");
+        return;
+    }
+    
     Serial.println();
     Serial.print("Connected with IP: ");
     Serial.println(WiFi.localIP());
-    Serial.println();
-
-    Firebase.printf("Firebase Client v%s\n", FIREBASE_CLIENT_VERSION);
-
-    ssl.setInsecure();
-#if defined(ESP8266)
-    ssl.setBufferSizes(1024, 1024);
-#endif
-
-    // Initialize the authentication handler.
-    initializeApp(client, app, getAuth(dbSecret));
-
-    // Binding the authentication handler with your Database class object.
-    app.getApp<RealtimeDatabase>(Database);
-
-    // Set your database URL
-    Database.url(DATABASE_URL);
-
-    // In sync functions, we have to set the operating result for the client that works with the function.
-    client.setAsyncResult(result);
-
-    // Set, push and get integer value
-
-    Serial.print("Set int... ");
-    bool status = Database.set<int>(client, "/test/int", 12345);
-    if (status)
-        Serial.println("ok");
-    else
-        printError(client.lastError().code(), client.lastError().message());
-
-    Serial.print("Push int... ");
-    String name = Database.push<int>(client, "/test/push", 12345);
-    if (client.lastError().code() == 0)
-        Firebase.printf("ok, name: %s\n", name.c_str());
-    else
-        printError(client.lastError().code(), client.lastError().message());
-
-    Serial.print("Get int... ");
-    int v1 = Database.get<int>(client, "/test/int");
-    if (client.lastError().code() == 0)
-        Serial.println(v1);
-    else
-        printError(client.lastError().code(), client.lastError().message());
-
-    // Set, push and get Boolean value
-
 }
 
-void loop()
-{
-    // We don't need to poll the async task using Database.loop(); as in the Stream examples because 
-    // only blocking (sync) functions were used in this example.
+void setup() {
+    Serial.begin(9600);
+    connectToWiFi();
 
-    // We don't have to poll authentication handler task using app.loop() as seen in other examples
-    // because the database secret is the priviledge access key that never expired.
+    ssl.setInsecure();
+    Serial.println("Initializing Firebase...");
+    initializeApp(client, app, getAuth(dbSecret));
+
+    if (client.lastError().code() != 0) {
+        Serial.print("Firebase Initialization Error: ");
+        printError(client.lastError().code(), client.lastError().message());
+        return;
+    }
+
+    Serial.println("Firebase Initialized Successfully");
+
+    app.getApp<RealtimeDatabase>(Database);
+    Database.url(DATABASE_URL);
+    client.setAsyncResult(result);
+}
+
+void loop() {
+    // Check for incoming serial data from Arduino
+    if (Serial.available()) {
+        String receivedData = Serial.readStringUntil('\n');
+        Serial.println("Received: " + receivedData);
+
+        // Convert received data to float
+        float temperature = receivedData.toFloat(); // Convert string to float
+
+        // Update temperature data in Firebase
+        String path = "/temperature"; // Path where the temperature will be stored
+        if (Database.set<float>(client, path, temperature)) {
+            Serial.printf("Temperature updated successfully: %.2f\n", temperature);
+        } else {
+            Serial.print("Update Error: ");
+            printError(client.lastError().code(), client.lastError().message());
+        }
+    } else {
+        Serial.print("..."); // Optional: print dots to indicate waiting for data
+    }
+
+    delay(1000); // Delay for a second before checking again
 }
