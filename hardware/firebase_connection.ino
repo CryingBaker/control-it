@@ -8,11 +8,11 @@
 #include <FirebaseClient.h>
 #include <WiFiClientSecure.h>
 
-#define WIFI_SSID "realme"
-#define WIFI_PASSWORD "suyash613"
+#define WIFI_SSID "ssid"
+#define WIFI_PASSWORD "password"
 
-#define DATABASE_SECRET "hx4iVAqmEQ3dLL5soVYqCNOOSk7shVaxkfo2MFHz"
-#define DATABASE_URL "https://control-it-38c7d-default-rtdb.asia-southeast1.firebasedatabase.app/"
+#define DATABASE_SECRET "you_api_key"
+#define DATABASE_URL "firebase_url"
 
 WiFiClientSecure ssl;
 DefaultNetwork network;
