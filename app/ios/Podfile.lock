@@ -2615,18 +2615,18 @@ PODS:
     - Firebase/Analytics (= 10.29.0)
     - React-Core
     - RNFBApp
-  - RNFBApp (20.4.0):
+  - RNFBApp (20.5.0):
     - Firebase/CoreOnly (= 10.29.0)
     - React-Core
-  - RNFBAuth (20.4.0):
+  - RNFBAuth (20.5.0):
     - Firebase/Auth (= 10.29.0)
     - React-Core
     - RNFBApp
-  - RNFBDatabase (20.4.0):
+  - RNFBDatabase (20.5.0):
     - Firebase/Database (= 10.29.0)
     - React-Core
     - RNFBApp
-  - RNFBFirestore (20.4.0):
+  - RNFBFirestore (20.5.0):
     - Firebase/Firestore (= 10.29.0)
     - nanopb (< 2.30910.0, >= 2.30908.0)
     - React-Core
@@ -3098,10 +3098,10 @@ SPEC CHECKSUMS:
   ReactCommon: f79ae672224dc1e6c2d932062176883c98eebd57
   RecaptchaInterop: 7d1a4a01a6b2cb1610a47ef3f85f0c411434cb21
   RNFBAnalytics: 2e647874278671963ef9049b4228acecfc88dd6d
-  RNFBApp: 2f83756f4d8be2859af5e2cf54130c20e380119d
-  RNFBAuth: ae6e6195e2cf783f8ad1977186925c61358c8ec9
-  RNFBDatabase: 1455493e2e5f82e56bf2087729bed56b47e23fbb
-  RNFBFirestore: c6f4790ed5b6e78da008c906657571be3800270b
+  RNFBApp: 5f87753a8d8b37d229adf85cd0ff37709ffdf008
+  RNFBAuth: ecbb030e0fd3551b8bc36cc85e0ebb1bcfb7685e
+  RNFBDatabase: 6cb9aea137bca41d596be5f81e12dca580c6f36d
+  RNFBFirestore: b12e7d4e6a94e08565638442def454984a06c065
   RNGestureHandler: 20a4307fd21cbff339abfcfa68192f3f0a6a518b
   RNReanimated: d51431fd3597a8f8320319dce8e42cee82a5445f
   RNScreens: 30249f9331c3b00ae7cb7922e11f58b3ed369c07
@@ -3109,6 +3109,6 @@ SPEC CHECKSUMS:
   SocketRocket: abac6f5de4d4d62d24e11868d7a2f427e0ef940d
   Yoga: 33622183a85805e12703cd618b2c16bfd18bfffb
 
-PODFILE CHECKSUM: d167775bedd7d0acf5b701c3fbb33858491e6356
+PODFILE CHECKSUM: 15574719c25bce534f0315756720179df61747f4
 
 COCOAPODS: 1.15.2
