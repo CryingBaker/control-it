@@ -1,10 +1,11 @@
 import { Button, Text, View, FlatList, Switch, TextInput, Modal, TouchableOpacity } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import auth from '@react-native-firebase/auth';
-import firestore from '@react-native-firebase/firestore';
+import firebase from '@react-native-firebase/app';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import tw from 'twrnc';
+import '@react-native-firebase/database';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
 const signOut = async () => { 
@@ -13,15 +14,15 @@ const signOut = async () => {
 }
 
 const Home = () => {
-  const [appliances, setAppliances] = useState<{ id: string; name: string; status: boolean; reg_status: boolean; }[]>([]);
-  const [temperature, setTemperature] = useState<number | null>(null);
-  const [powerConsumption, setPowerConsumption] = useState<number | null>(null);
+  const [appliances, setAppliances] = useState([]);
+  const [temperature, setTemperature] = useState(null);
+  const [powerConsumption, setPowerConsumption] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [newApplianceName, setNewApplianceName] = useState('');
   const [newApplianceLocation, setNewApplianceLocation] = useState('');
-  const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null);
-  const [timeSinceLastRefresh, setTimeSinceLastRefresh] = useState<string>('Never');
-  const [isToggling, setIsToggling] = useState<string | null>(null);
+  const [lastRefreshTime, setLastRefreshTime] = useState(null);
+  const [timeSinceLastRefresh, setTimeSinceLastRefresh] = useState('Never');
+  const [isToggling, setIsToggling] = useState(null);
   const [isAutomatic, setIsAutomatic] = useState(false);
 
   useEffect(() => {
@@ -30,16 +31,19 @@ const Home = () => {
         const user = auth().currentUser;
         if (user) {
           const userId = user.uid;
-          const userDoc = await firestore().collection('users').doc(userId).get();
-          if (userDoc.exists) {
-            const userData = userDoc.data();
-            setTemperature(userData?.temperature || null);
-            setPowerConsumption(userData?.powerConsumption || null);
-            setIsAutomatic(userData?.automatic || false);
-          }
+          const userRef = firebase.app().database('https://control-it-38c7d-default-rtdb.asia-southeast1.firebasedatabase.app/').ref(`users/${userId}`);
+          
+          userRef.once('value', snapshot => {
+            const userData = snapshot.val();
+            if (userData) {
+              setTemperature(userData.temperature || null);
+              setPowerConsumption(userData.powerConsumption || null);
+              setIsAutomatic(userData.automatic || false);
+            }
+          });
         }
       } catch (error) {
-        console.error("Error fetching user attributes from Firestore:", error);
+        console.error("Error fetching user attributes from Realtime Database:", error);
       }
     };
 
@@ -48,12 +52,21 @@ const Home = () => {
         const user = auth().currentUser;
         if (user) {
           const userId = user.uid;
-          const appliancesSnapshot = await firestore().collection('users').doc(userId).collection('appliances').get();
-          const appliancesList: { id: string; name: string; status: boolean; reg_status: boolean; }[] = appliancesSnapshot.docs.map(doc => ({ id: doc.id, name: doc.data().name, status: doc.data().status, reg_status: doc.data().reg_status }));
-          setAppliances(appliancesList);
+          const appliancesRef = firebase.app().database('https://control-it-38c7d-default-rtdb.asia-southeast1.firebasedatabase.app/').ref(`users/${userId}/appliances`);
+          
+          appliancesRef.once('value', snapshot => {
+            const appliancesList = [];
+            snapshot.forEach(childSnapshot => {
+              appliancesList.push({
+                id: childSnapshot.key,
+                ...childSnapshot.val(),
+              });
+            });
+            setAppliances(appliancesList);
+          });
         }
       } catch (error) {
-        console.error("Error fetching appliances from Firestore:", error);
+        console.error("Error fetching appliances from Realtime Database:", error);
       }
     };
 
@@ -90,14 +103,14 @@ const Home = () => {
     };
   }, [lastRefreshTime]);
 
-  const toggleAppliance = async (id: string) => {
+  const toggleAppliance = async (id) => {
     if (isToggling === id) return; // Prevent multiple toggles at the same time
     setIsToggling(id);
     try {
       const user = auth().currentUser;
       if (user) {
         const userId = user.uid;
-        const applianceRef = firestore().collection('users').doc(userId).collection('appliances').doc(id);
+        const applianceRef = firebase.app().database('https://control-it-38c7d-default-rtdb.asia-southeast1.firebasedatabase.app/').ref(`users/${userId}/appliances/${id}`);
         const appliance = appliances.find(appliance => appliance.id === id);
         if (appliance) {
           const newStatus = !appliance.status;
@@ -110,7 +123,7 @@ const Home = () => {
         }
       }
     } catch (error) {
-      console.error("Error updating appliance status in Firestore:", error);
+      console.error("Error updating appliance status in Realtime Database:", error);
     } finally {
       setIsToggling(null);
     }
@@ -123,7 +136,6 @@ const Home = () => {
     }
 
     const newAppliance = {
-      id: (appliances.length + 1).toString(),
       name: newApplianceName,
       location: newApplianceLocation,
       reg_status: false,
@@ -134,13 +146,13 @@ const Home = () => {
       const user = auth().currentUser;
       if (user) {
         const userId = user.uid;
-        const applianceRef = firestore().collection('users').doc(userId).collection('appliances').doc(newAppliance.id);
+        const applianceRef = firebase.app().database('https://control-it-38c7d-default-rtdb.asia-southeast1.firebasedatabase.app/').ref(`users/${userId}/appliances`).push();
         await applianceRef.set(newAppliance);
-        setAppliances([...appliances, newAppliance]);
+        setAppliances([...appliances, { id: applianceRef.key, ...newAppliance }]);
       }
     } catch (error) {
-      console.error("Error adding appliance to Firestore:", error);
-      alert(`Error adding appliance to Firestore: ${(error as Error).message}`);
+      console.error("Error adding appliance to Realtime Database:", error);
+      alert(`Error adding appliance to Realtime Database: ${error.message}`);
     }
 
     setNewApplianceName('');
@@ -155,14 +167,14 @@ const Home = () => {
       const user = auth().currentUser;
       if (user) {
         const userId = user.uid;
-        await firestore().collection('users').doc(userId).update({ automatic: newValue });
+        await firebase.app().database('https://control-it-38c7d-default-rtdb.asia-southeast1.firebasedatabase.app/').ref(`users/${userId}`).update({ automatic: newValue });
       }
     } catch (error) {
-      console.error("Error updating automation status in Firestore:", error);
+      console.error("Error updating automation status in Realtime Database:", error);
     }
   };
 
-  const renderItem = ({ item }: { item: { id: string, name: string, status: boolean, reg_status: boolean } }) => (
+  const renderItem = ({ item }) => (
     <View style={tw`flex-row justify-between items-center p-4 mb-2 rounded-lg shadow ${item.reg_status ? 'bg-white' : 'bg-gray-200'}`}>
       <View>
         <Text style={tw`text-lg ${item.reg_status ? 'text-black' : 'text-gray-500'}`}>{item.name}</Text>
@@ -208,53 +220,37 @@ const Home = () => {
           keyExtractor={item => item.id}
         />
       ) : (
-        <Text style={tw`text-lg`}>No appliances found.</Text>
+        <Text>No appliances found.</Text>
       )}
+      <Modal visible={modalVisible} animationType="slide" transparent={true}>
+        <View style={tw`flex-1 justify-center items-center bg-black bg-opacity-50`}>
+          <View style={tw`bg-white p-5 rounded-lg shadow-lg w-80`}>
+            <Text style={tw`text-lg font-bold mb-3`}>Add New Appliance</Text>
+            <TextInput
+              style={tw`border border-gray-300 rounded-md p-2 mb-3`}
+              placeholder="Appliance Name"
+              value={newApplianceName}
+              onChangeText={setNewApplianceName}
+            />
+            <TextInput
+              style={tw`border border-gray-300 rounded-md p-2 mb-3`}
+              placeholder="Location"
+              value={newApplianceLocation}
+              onChangeText={setNewApplianceLocation}
+            />
+            <View style={tw`flex-row justify-between`}>
+              <Button title="Cancel" onPress={() => setModalVisible(false)} />
+              <Button title="Add" onPress={addAppliance} />
+            </View>
+          </View>
+        </View>
+      </Modal>
       <TouchableOpacity
         style={tw`bg-red-500 rounded-lg p-3 mt-5`}
         onPress={signOut}
       >
         <Text style={tw`text-white font-bold text-center`}>Sign Out</Text>
       </TouchableOpacity>
-
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <View style={tw`flex-1 justify-center items-center bg-black bg-opacity-50`}>
-          <View style={tw`w-4/5 bg-white rounded-2xl p-5 shadow-lg`}>
-            <Text style={tw`text-xl font-bold mb-4`}>Add New Appliance</Text>
-            <TextInput
-              style={tw`h-10 border border-gray-300 rounded-lg mb-4 px-3 bg-white`}
-              placeholder="Appliance Name"
-              value={newApplianceName}
-              onChangeText={setNewApplianceName}
-            />
-            <TextInput
-              style={tw`h-10 border border-gray-300 rounded-lg mb-4 px-3 bg-white`}
-              placeholder="Location"
-              value={newApplianceLocation}
-              onChangeText={setNewApplianceLocation}
-            />
-            <View style={tw`flex-row justify-between`}>
-              <TouchableOpacity
-                style={tw`bg-red-500 rounded-lg p-3`}
-                onPress={() => setModalVisible(false)}
-              >
-                <Text style={tw`text-white font-bold text-center`}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={tw`bg-blue-500 rounded-lg p-3`}
-                onPress={addAppliance}
-              >
-                <Text style={tw`text-white font-bold text-center`}>Add</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 };

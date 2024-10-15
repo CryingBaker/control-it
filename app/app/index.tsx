@@ -2,17 +2,16 @@ import React, { useState } from 'react';
 import { View, TextInput, Text, TouchableOpacity, KeyboardAvoidingView, ActivityIndicator, Platform } from 'react-native';
 import tw from 'twrnc';
 import auth, { firebase } from '@react-native-firebase/auth';
-import firestore from '@react-native-firebase/firestore';
+import '@react-native-firebase/database';
 
-
-// if (Platform.OS === 'web') {
-//   const firebaseConfig = require('./firebaseConfig'); // Replace './firebaseConfig' with the path to your actual firebase config file
-//   if (!firebase.apps.length) {
-//     firebase.initializeApp(firebaseConfig);
-//   } else {
-//     firebase.app(); // if already initialized, use that one
-//   }
-// }
+if (Platform.OS === 'web') {
+  const firebaseConfig = require('./firebaseConfig'); // Replace './firebaseConfig' with the path to your actual firebase config file
+  if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+  } else {
+    firebase.app(); // if already initialized, use that one
+  }
+}
 
 function App() {
   const [email, setEmail] = useState('');
@@ -34,22 +33,35 @@ function App() {
   const signUp = async () => {
     setLoading(true);
     try {
-      const userCredential = await auth().createUserWithEmailAndPassword(email, password);
-      const userId = userCredential.user.uid;
+        const userCredential = await auth().createUserWithEmailAndPassword(email, password);
+        const userId = userCredential.user.uid;
+        console.log("User created with ID:", userId);
+        const databaseURL = "https://control-it-38c7d-default-rtdb.asia-southeast1.firebasedatabase.app/";
 
-      // Set initial temperature and powerConsumption in Firestore
-      await firestore().collection('users').doc(userId).set({
-        temperature: "0",
-        powerConsumption: "0",
-      });
+        // Set initial temperature and powerConsumption in Realtime Database
+        console.log("Attempting to write user data to Realtime Database...");
+        await firebase.app().database('https://control-it-38c7d-default-rtdb.asia-southeast1.firebasedatabase.app/')
+            .ref(`users/${userId}`)
+            .set({
+                temperature: "0",
+                powerConsumption: "0",
+                automatic: true,
+            })
+            .then(() => {
+                console.log("User data saved in Realtime Database");
+            })
+            .catch((dbError) => {
+                console.error("Error writing to database:", dbError);
+            });
 
-      alert("Check your email!");
+        alert("Check your email!");
     } catch (e: any) {
-      alert(e.message);
+        console.error("Error during sign up:", e);
+        alert(e.message);
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
-  };
+};
 
   return (
     <View style={tw`flex-1 items-center justify-center bg-gray-100`}>
